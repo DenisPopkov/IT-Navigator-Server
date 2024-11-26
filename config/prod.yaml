@@ -1,7 +1,7 @@
 env: "prod"
 storage_path: "/root/apps/grpc-auth/sso.db"
 grpc:
-  port: 4040
+  port: 4052
   timeout: 5s
 rest:
   port: 4041

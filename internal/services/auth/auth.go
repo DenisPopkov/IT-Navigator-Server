@@ -28,13 +28,13 @@ var (
 type UserSaver interface {
 	SaveUser(
 		ctx context.Context,
-		phone string,
+		email string,
 		passHash []byte,
 	) (uid int64, err error)
 }
 
 type UserProvider interface {
-	User(ctx context.Context, phone string) (models.User, error)
+	User(ctx context.Context, email string) (models.User, error)
 }
 
 type AppProvider interface {
@@ -62,19 +62,19 @@ func New(
 // If user doesn't exist, returns error.
 func (a *Auth) Login(
 	ctx context.Context,
-	phone string,
+	email string,
 	password string,
 ) (string, error) {
 	const op = "Auth.Login"
 
 	log := a.log.With(
 		slog.String("op", op),
-		slog.String("username", phone),
+		slog.String("username", email),
 	)
 
 	log.Info("attempting to login user")
 
-	user, err := a.usrProvider.User(ctx, phone)
+	user, err := a.usrProvider.User(ctx, email)
 	if err != nil {
 		if errors.Is(err, storage.ErrUserNotFound) {
 			a.log.Warn("user not found", sl.Err(err))
@@ -112,12 +112,12 @@ func (a *Auth) Login(
 
 // RegisterNewUser registers new user in the system and returns user ID.
 // If user with given username already exists, returns error.
-func (a *Auth) RegisterNewUser(ctx context.Context, phone string, pass string) (int64, error) {
+func (a *Auth) RegisterNewUser(ctx context.Context, email string, pass string) (int64, error) {
 	const op = "Auth.RegisterNewUser"
 
 	log := a.log.With(
 		slog.String("op", op),
-		slog.String("phone", phone),
+		slog.String("email", email),
 	)
 
 	log.Info("registering user")
@@ -129,7 +129,7 @@ func (a *Auth) RegisterNewUser(ctx context.Context, phone string, pass string) (
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	id, err := a.usrSaver.SaveUser(ctx, phone, passHash)
+	id, err := a.usrSaver.SaveUser(ctx, email, passHash)
 	if err != nil {
 		log.Error("failed to save user", sl.Err(err))
 

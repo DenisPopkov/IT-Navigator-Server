@@ -1,7 +1,7 @@
 package tests
 
 import (
-	ssov1 "github.com/DenisPopkov/protos/gen/go/sso"
+	ssov1 "github.com/DenisPopkov/IT-Navigator-Proto/gen/go/sso"
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
@@ -19,11 +19,11 @@ const (
 func TestRegisterLogin_Login_HappyPath(t *testing.T) {
 	ctx, st := suite.New(t)
 
-	phone := gofakeit.Phone()
+	email := gofakeit.Email()
 	pass := randomFakePassword()
 
 	respReg, err := st.AuthClient.Register(ctx, &ssov1.RegisterRequest{
-		Phone:    phone,
+		Email:    email,
 		Password: pass,
 	})
 
@@ -31,7 +31,7 @@ func TestRegisterLogin_Login_HappyPath(t *testing.T) {
 	assert.NotEmpty(t, respReg.GetUserId())
 
 	respLogin, err := st.AuthClient.Login(ctx, &ssov1.LoginRequest{
-		Phone:    phone,
+		Email:    email,
 		Password: pass,
 	})
 	require.NoError(t, err)
@@ -50,7 +50,7 @@ func TestRegisterLogin_Login_HappyPath(t *testing.T) {
 	require.True(t, ok)
 
 	assert.Equal(t, respReg.GetUserId(), int64(claims["uid"].(float64)))
-	assert.Equal(t, phone, claims["phone"].(string))
+	assert.Equal(t, email, claims["email"].(string))
 
 	const deltaSeconds = 1
 
@@ -61,18 +61,18 @@ func TestRegisterLogin_Login_HappyPath(t *testing.T) {
 func TestRegisterLogin_DuplicatedRegistration(t *testing.T) {
 	ctx, st := suite.New(t)
 
-	phone := gofakeit.Phone()
+	email := gofakeit.Email()
 	pass := randomFakePassword()
 
 	respReg, err := st.AuthClient.Register(ctx, &ssov1.RegisterRequest{
-		Phone:    phone,
+		Email:    email,
 		Password: pass,
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, respReg.GetUserId())
 
 	respReg, err = st.AuthClient.Register(ctx, &ssov1.RegisterRequest{
-		Phone:    phone,
+		Email:    email,
 		Password: pass,
 	})
 	require.Error(t, err)
@@ -85,34 +85,34 @@ func TestRegister_FailCases(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		phone       string
+		email       string
 		password    string
 		expectedErr string
 	}{
 		{
 			name:        "Register with Empty Password",
-			phone:       gofakeit.Phone(),
+			email:       gofakeit.Email(),
 			password:    "",
 			expectedErr: "password is required",
 		},
 		{
-			name:        "Register with Empty Phone",
-			phone:       "",
+			name:        "Register with Empty Email",
+			email:       "",
 			password:    randomFakePassword(),
-			expectedErr: "phone is required",
+			expectedErr: "email is required",
 		},
 		{
 			name:        "Register with Both Empty",
-			phone:       "",
+			email:       "",
 			password:    "",
-			expectedErr: "phone is required",
+			expectedErr: "email is required",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := st.AuthClient.Register(ctx, &ssov1.RegisterRequest{
-				Phone:    tt.phone,
+				Email:    tt.email,
 				Password: tt.password,
 			})
 			require.Error(t, err)
@@ -127,46 +127,46 @@ func TestLogin_FailCases(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		phone       string
+		email       string
 		password    string
 		expectedErr string
 	}{
 		{
 			name:        "Login with Empty Password",
-			phone:       gofakeit.Phone(),
+			email:       gofakeit.Email(),
 			password:    "",
 			expectedErr: "password is required",
 		},
 		{
-			name:        "Login with Empty Phone",
-			phone:       "",
+			name:        "Login with Empty Email",
+			email:       "",
 			password:    randomFakePassword(),
-			expectedErr: "phone is required",
+			expectedErr: "email is required",
 		},
 		{
-			name:        "Login with Both Empty Phone and Password",
-			phone:       "",
+			name:        "Login with Both Empty Email and Password",
+			email:       "",
 			password:    "",
-			expectedErr: "phone is required",
+			expectedErr: "email is required",
 		},
 		{
 			name:        "Login with Non-Matching Password",
-			phone:       gofakeit.Phone(),
+			email:       gofakeit.Email(),
 			password:    randomFakePassword(),
-			expectedErr: "invalid phone or password",
+			expectedErr: "invalid email or password",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := st.AuthClient.Register(ctx, &ssov1.RegisterRequest{
-				Phone:    gofakeit.Phone(),
+				Email:    gofakeit.Email(),
 				Password: randomFakePassword(),
 			})
 			require.NoError(t, err)
 
 			_, err = st.AuthClient.Login(ctx, &ssov1.LoginRequest{
-				Phone:    tt.phone,
+				Email:    tt.email,
 				Password: tt.password,
 			})
 			require.Error(t, err)

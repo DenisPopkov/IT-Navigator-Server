@@ -92,13 +92,8 @@ func (a *App) Run() error {
 	authRouter := router.PathPrefix("").Subrouter()
 	authRouter.Use(authMiddleware)
 
-	authRouter.HandleFunc("/poets", a.coreService.UpdatePoetIsFaveHandler).Methods("PATCH")
-	authRouter.HandleFunc("/articles", a.coreService.UpdateArticleIsFaveHandler).Methods("PATCH")
-	authRouter.HandleFunc("/authors", a.coreService.UpdateAuthorIsFaveHandler).Methods("PATCH")
 	authRouter.HandleFunc("/user", a.coreService.DeleteUserHandler).Methods("DELETE")
 	authRouter.HandleFunc("/user", a.coreService.GetUserHandler).Methods("GET")
-	authRouter.HandleFunc("/quiz", a.coreService.GetQuizHandler).Methods("GET")
-	authRouter.HandleFunc("/clip", a.coreService.GetClipHandler).Methods("GET")
 	authRouter.HandleFunc("/articles", a.coreService.GetArticlesHandler).Methods("GET")
 	authRouter.HandleFunc("/poets", a.coreService.GetPoetsHandler).Methods("GET")
 	authRouter.HandleFunc("/authors", a.coreService.GetAuthorHandler).Methods("GET")

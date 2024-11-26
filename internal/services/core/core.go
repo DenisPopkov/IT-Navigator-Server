@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/http"
 	"sso/internal/domain/models"
-	"strconv"
 	"time"
 )
 
@@ -18,32 +17,19 @@ type UserProvider interface {
 
 type PoetProvider interface {
 	Poets(ctx context.Context, userId int64) ([]models.Poet, error)
-	UpdatePoetIsFave(ctx context.Context, userID int64, poetID int64) error
 }
 
 type ArticleProvider interface {
 	Articles(ctx context.Context, userId int64) ([]models.Article, error)
-	UpdateArticleIsFave(ctx context.Context, userID int64, articleID int64) error
 }
 
 type AuthorProvider interface {
 	Authors(ctx context.Context, userId int64) ([]models.Author, error)
-	UpdateAuthorIsFave(ctx context.Context, userID int64, authorID int64) error
-}
-
-type ClipProvider interface {
-	GetClip(ctx context.Context, clipId int64) (models.Clip, error)
-}
-
-type QuizProvider interface {
-	GetQuiz(ctx context.Context, quizId int64) (models.Quiz, error)
 }
 
 type Core struct {
 	log             *slog.Logger
 	userProvider    UserProvider
-	quizProvider    QuizProvider
-	clipProvider    ClipProvider
 	poetProvider    PoetProvider
 	articleProvider ArticleProvider
 	authorProvider  AuthorProvider
@@ -53,8 +39,6 @@ type Core struct {
 func New(
 	log *slog.Logger,
 	userProvider UserProvider,
-	quizProvider QuizProvider,
-	clipProvider ClipProvider,
 	poetProvider PoetProvider,
 	articleProvider ArticleProvider,
 	authorProvider AuthorProvider,
@@ -63,8 +47,6 @@ func New(
 	return &Core{
 		log:             log,
 		userProvider:    userProvider,
-		quizProvider:    quizProvider,
-		clipProvider:    clipProvider,
 		poetProvider:    poetProvider,
 		articleProvider: articleProvider,
 		authorProvider:  authorProvider,
@@ -156,131 +138,6 @@ func (c *Core) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// UpdateAuthorIsFaveHandler handles the HTTP PATCH request to update the isFave field for an author.
-func (c *Core) UpdateAuthorIsFaveHandler(w http.ResponseWriter, r *http.Request) {
-	const op = "core.UpdateAuthorIsFaveHandler"
-
-	uid, ok := r.Context().Value("uid").(int64)
-	if !ok {
-		http.Error(w, "UID not found in context", http.StatusInternalServerError)
-		return
-	}
-
-	authorIDStr := r.URL.Query().Get("authorId")
-	authorID, err := strconv.ParseInt(authorIDStr, 10, 64)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusBadRequest)
-		return
-	}
-
-	err = c.authorProvider.UpdateAuthorIsFave(r.Context(), uid, authorID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-}
-
-// UpdateArticleIsFaveHandler handles the HTTP PATCH request to update the isFave field for an author.
-func (c *Core) UpdateArticleIsFaveHandler(w http.ResponseWriter, r *http.Request) {
-	const op = "core.UpdateArticleIsFaveHandler"
-
-	uid, ok := r.Context().Value("uid").(int64)
-	if !ok {
-		http.Error(w, "UID not found in context", http.StatusInternalServerError)
-		return
-	}
-
-	authorIDStr := r.URL.Query().Get("articleId")
-	articleID, err := strconv.ParseInt(authorIDStr, 10, 64)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusBadRequest)
-		return
-	}
-
-	err = c.articleProvider.UpdateArticleIsFave(r.Context(), uid, articleID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-}
-
-// UpdatePoetIsFaveHandler handles the HTTP PATCH request to update the isFave field for an author.
-func (c *Core) UpdatePoetIsFaveHandler(w http.ResponseWriter, r *http.Request) {
-	const op = "core.UpdatePoetIsFaveHandler"
-
-	uid, ok := r.Context().Value("uid").(int64)
-	if !ok {
-		http.Error(w, "UID not found in context", http.StatusInternalServerError)
-		return
-	}
-
-	poetIDStr := r.URL.Query().Get("poetId")
-	poetID, err := strconv.ParseInt(poetIDStr, 10, 64)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusBadRequest)
-		return
-	}
-
-	err = c.poetProvider.UpdatePoetIsFave(r.Context(), uid, poetID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-}
-
-func (c *Core) GetClipHandler(w http.ResponseWriter, r *http.Request) {
-	const op = "core.GetClipHandler"
-
-	clipIDStr := r.URL.Query().Get("clipId")
-	clipID, err := strconv.ParseInt(clipIDStr, 10, 64)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusBadRequest)
-		return
-	}
-
-	clips, err := c.clipProvider.GetClip(r.Context(), clipID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(clips); err != nil {
-		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (c *Core) GetQuizHandler(w http.ResponseWriter, r *http.Request) {
-	const op = "core.GetQuizHandler"
-
-	quizIDStr := r.URL.Query().Get("quizId")
-	quizID, err := strconv.ParseInt(quizIDStr, 10, 64)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusBadRequest)
-		return
-	}
-
-	quiz, err := c.quizProvider.GetQuiz(r.Context(), quizID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-
-	if err := json.NewEncoder(w).Encode(quiz); err != nil {
-		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusInternalServerError)
-		return
-	}
-}
-
 func (c *Core) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	const op = "core.GetUserHandler"
 
@@ -290,15 +147,11 @@ func (c *Core) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clips, err := c.userProvider.GetUser(r.Context(), uid)
+	_, err := c.userProvider.GetUser(r.Context(), uid)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(clips); err != nil {
-		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusInternalServerError)
-		return
-	}
 }

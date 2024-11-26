@@ -5,6 +5,4 @@ type Article struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Image       string `json:"image"`
-	Clip        int64  `json:"clip"`
-	IsFave      bool   `json:"isFave"`
 }

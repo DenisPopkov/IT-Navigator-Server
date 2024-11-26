@@ -31,10 +31,10 @@ func (s *Storage) Stop() error {
 	return s.db.Close()
 }
 
-func (s *Storage) SaveUser(ctx context.Context, phone string, passHash []byte) (int64, error) {
+func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (int64, error) {
 	const op = "storage.sqlite.SaveUser"
 
-	stmt, err := s.db.Prepare("INSERT INTO users(phone, pass_hash, name, image) VALUES(?, ?, ?, ?)")
+	stmt, err := s.db.Prepare("INSERT INTO users(email, pass_hash, name, image) VALUES(?, ?, ?, ?)")
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
@@ -69,7 +69,7 @@ func (s *Storage) SaveUser(ctx context.Context, phone string, passHash []byte) (
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	randomKey := rand.Intn(len(authorsName))
 
-	res, err := stmt.ExecContext(ctx, phone, passHash, authorsName[randomKey], authorsImage[randomKey])
+	res, err := stmt.ExecContext(ctx, email, passHash, authorsName[randomKey], authorsImage[randomKey])
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && errors.Is(sqliteErr.ExtendedCode, sqlite3.ErrConstraintUnique) {
@@ -84,21 +84,21 @@ func (s *Storage) SaveUser(ctx context.Context, phone string, passHash []byte) (
 	}
 
 	for _, authorID := range authorIDs {
-		_, err = s.db.ExecContext(ctx, "INSERT INTO authors(userId, authorId, isFave) VALUES(?, ?, 0)", id, authorID)
+		_, err = s.db.ExecContext(ctx, "INSERT INTO authors(userId, authorId) VALUES(?, ?)", id, authorID)
 		if err != nil {
 			return id, fmt.Errorf("%s: failed to insert author: %w", op, err)
 		}
 	}
 
 	for _, articleID := range articleIDs {
-		_, err = s.db.ExecContext(ctx, "INSERT INTO articles(userId, articleId, isFave) VALUES(?, ?, 0)", id, articleID)
+		_, err = s.db.ExecContext(ctx, "INSERT INTO articles(userId, articleId) VALUES(?, ?)", id, articleID)
 		if err != nil {
 			return id, fmt.Errorf("%s: failed to insert article: %w", op, err)
 		}
 	}
 
 	for _, poetID := range poetIDs {
-		_, err = s.db.ExecContext(ctx, "INSERT INTO poets(userId, poetId, isFave) VALUES(?, ?, 0)", id, poetID)
+		_, err = s.db.ExecContext(ctx, "INSERT INTO poets(userId, poetId) VALUES(?, ?)", id, poetID)
 		if err != nil {
 			return id, fmt.Errorf("%s: failed to insert poet: %w", op, err)
 		}
@@ -176,19 +176,19 @@ func (s *Storage) getAllIDsFromPoets(ctx context.Context) ([]int, error) {
 	return ids, nil
 }
 
-// User returns user by phone.
-func (s *Storage) User(ctx context.Context, phone string) (models.User, error) {
+// User returns user by email.
+func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
 	const op = "storage.sqlite.User"
 
-	stmt, err := s.db.Prepare("SELECT id, phone, pass_hash, name, image FROM users WHERE phone = ?")
+	stmt, err := s.db.Prepare("SELECT id, email, pass_hash, name, image FROM users WHERE email = ?")
 	if err != nil {
 		return models.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	row := stmt.QueryRowContext(ctx, phone)
+	row := stmt.QueryRowContext(ctx, email)
 
 	var user models.User
-	err = row.Scan(&user.ID, &user.Phone, &user.PassHash, &user.Name, &user.Image)
+	err = row.Scan(&user.ID, &user.Email, &user.PassHash, &user.Name, &user.Image)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.User{}, fmt.Errorf("%s: %w", op, storage.ErrUserNotFound)
@@ -229,7 +229,7 @@ func (s *Storage) Authors(ctx context.Context, userId int64) ([]models.Author, e
 	const op = "storage.sqlite.GetAuthors"
 
 	stmt, err := s.db.Prepare(`
-		SELECT a.id, a.name, a.image, a.clip, ua.isFave
+		SELECT a.id, a.name, a.image
 		FROM author AS a
 		INNER JOIN authors AS ua ON a.id = ua.authorId
 		WHERE ua.userId = ?
@@ -247,7 +247,7 @@ func (s *Storage) Authors(ctx context.Context, userId int64) ([]models.Author, e
 	var authors []models.Author
 	for rows.Next() {
 		var author models.Author
-		err := rows.Scan(&author.ID, &author.Name, &author.Image, &author.Clip, &author.IsFave)
+		err := rows.Scan(&author.ID, &author.Name, &author.Image)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
@@ -266,7 +266,7 @@ func (s *Storage) Articles(ctx context.Context, userId int64) ([]models.Article,
 	const op = "storage.sqlite.GetArticles"
 
 	stmt, err := s.db.Prepare(`
-		SELECT a.id, a.name, a.image, a.clip, a.description, ua.isFave
+		SELECT a.id, a.name, a.image, a.description
 		FROM article AS a
 		INNER JOIN articles AS ua ON a.id = ua.articleId
 		WHERE ua.userId = ?
@@ -284,7 +284,7 @@ func (s *Storage) Articles(ctx context.Context, userId int64) ([]models.Article,
 	var articles []models.Article
 	for rows.Next() {
 		var article models.Article
-		err := rows.Scan(&article.ID, &article.Name, &article.Image, &article.Clip, &article.Description, &article.IsFave)
+		err := rows.Scan(&article.ID, &article.Name, &article.Image, &article.Description)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
@@ -303,7 +303,7 @@ func (s *Storage) Poets(ctx context.Context, userId int64) ([]models.Poet, error
 	const op = "storage.sqlite.GetPoets"
 
 	stmt, err := s.db.Prepare(`
-		SELECT p.id, p.name, p.image, p.clip, ua.isFave
+		SELECT p.id, p.name, p.image
 		FROM poet AS p
 		INNER JOIN poets AS ua ON p.id = ua.poetId
 		WHERE ua.userId = ?
@@ -321,7 +321,7 @@ func (s *Storage) Poets(ctx context.Context, userId int64) ([]models.Poet, error
 	var poets []models.Poet
 	for rows.Next() {
 		var poet models.Poet
-		err := rows.Scan(&poet.ID, &poet.Name, &poet.Image, &poet.Clip, &poet.IsFave)
+		err := rows.Scan(&poet.ID, &poet.Name, &poet.Image)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
@@ -368,173 +368,6 @@ func (s *Storage) DeleteUser(ctx context.Context, userID int64) error {
 	}
 
 	return nil
-}
-
-// UpdateAuthorIsFave updates the isFave field for an author in the authors table by their userID and authorID.
-func (s *Storage) UpdateAuthorIsFave(ctx context.Context, userId int64, authorId int64) error {
-	const op = "storage.sqlite.UpdateAuthorIsFave"
-
-	var currentIsFave int
-	err := s.db.QueryRowContext(ctx, "SELECT isFave FROM authors WHERE userId = ? AND authorId = ?", userId, authorId).Scan(&currentIsFave)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("%s: author with userId %d and authorId %d not found", op, userId, authorId)
-		}
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	newIsFave := 1 - currentIsFave
-
-	_, err = s.db.ExecContext(ctx, "UPDATE authors SET isFave = ? WHERE userId = ? AND authorId = ?", newIsFave, userId, authorId)
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	return nil
-}
-
-// UpdateArticleIsFave updates the isFave field for an article
-func (s *Storage) UpdateArticleIsFave(ctx context.Context, userId int64, articleId int64) error {
-	const op = "storage.sqlite.UpdateAuthorIsFave"
-
-	var currentIsFave int
-	err := s.db.QueryRowContext(ctx, "SELECT isFave FROM articles WHERE userId = ? AND articleId = ?", userId, articleId).Scan(&currentIsFave)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("%s: article with userId %d and articleId %d not found", op, userId, articleId)
-		}
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	newIsFave := 1 - currentIsFave
-
-	_, err = s.db.ExecContext(ctx, "UPDATE articles SET isFave = ? WHERE userId = ? AND articleId = ?", newIsFave, userId, articleId)
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	return nil
-}
-
-// UpdatePoetIsFave updates the isFave field for a poet
-func (s *Storage) UpdatePoetIsFave(ctx context.Context, userId int64, poetId int64) error {
-	const op = "storage.sqlite.UpdateAuthorIsFave"
-
-	var currentIsFave int
-	err := s.db.QueryRowContext(ctx, "SELECT isFave FROM poets WHERE userId = ? AND poetId = ?", userId, poetId).Scan(&currentIsFave)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("%s: poet with userId %d and poetId %d not found", op, userId, poetId)
-		}
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	newIsFave := 1 - currentIsFave
-
-	_, err = s.db.ExecContext(ctx, "UPDATE poets SET isFave = ? WHERE userId = ? AND poetId = ?", newIsFave, userId, poetId)
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	return nil
-}
-
-// GetClip retrieves a clip from the database by ID.
-func (s *Storage) GetClip(ctx context.Context, clipID int64) (models.Clip, error) {
-	const op = "storage.sqlite.GetClip"
-
-	stmtClipText, err := s.db.Prepare("SELECT text, title FROM clipText WHERE clipTextId = ?")
-	if err != nil {
-		return models.Clip{}, fmt.Errorf("%s: %w", op, err)
-	}
-	defer stmtClipText.Close()
-
-	rows, err := stmtClipText.QueryContext(ctx, clipID)
-	if err != nil {
-		return models.Clip{}, fmt.Errorf("%s: %w", op, err)
-	}
-	defer rows.Close()
-
-	var clipTexts []models.ClipText
-
-	for rows.Next() {
-		var clipText models.ClipText
-		if err := rows.Scan(&clipText.Text, &clipText.Title); err != nil {
-			return models.Clip{}, fmt.Errorf("%s: %w", op, err)
-		}
-		clipTexts = append(clipTexts, clipText)
-	}
-	if err := rows.Err(); err != nil {
-		return models.Clip{}, fmt.Errorf("%s: %w", op, err)
-	}
-
-	stmtClip, err := s.db.Prepare("SELECT id, image FROM clip WHERE id = ?")
-	if err != nil {
-		return models.Clip{}, fmt.Errorf("%s: %w", op, err)
-	}
-	defer stmtClip.Close()
-
-	var clip models.Clip
-	err = stmtClip.QueryRowContext(ctx, clipID).Scan(&clip.ID, &clip.Image)
-	if err != nil {
-		return models.Clip{}, fmt.Errorf("%s: %w", op, err)
-	}
-
-	quiz, err := s.GetQuiz(ctx, clipID)
-	if err != nil {
-		return models.Clip{}, fmt.Errorf("%s: %w", op, err)
-	}
-
-	clip.Text = clipTexts
-	clip.Quiz = quiz
-
-	return clip, nil
-}
-
-// GetQuiz retrieves a quiz from the database by ID.
-func (s *Storage) GetQuiz(ctx context.Context, quizID int64) (models.Quiz, error) {
-	const op = "storage.sqlite.GetQuiz"
-
-	stmtAnswers, err := s.db.Prepare("SELECT id, text, isRight FROM answers WHERE id = ?")
-	if err != nil {
-		return models.Quiz{}, fmt.Errorf("%s: %w", op, err)
-	}
-	defer stmtAnswers.Close()
-
-	rows, err := stmtAnswers.QueryContext(ctx, quizID)
-	if err != nil {
-		return models.Quiz{}, fmt.Errorf("%s: %w", op, err)
-	}
-	defer rows.Close()
-
-	var answers []models.Answer
-
-	for rows.Next() {
-		var answer models.Answer
-		if err := rows.Scan(&answer.ID, &answer.Text, &answer.IsRight); err != nil {
-			return models.Quiz{}, fmt.Errorf("%s: %w", op, err)
-		}
-		answers = append(answers, answer)
-	}
-	if err := rows.Err(); err != nil {
-		return models.Quiz{}, fmt.Errorf("%s: %w", op, err)
-	}
-
-	stmtQuiz, err := s.db.Prepare("SELECT id, question, description, image FROM quiz WHERE id = ?")
-	if err != nil {
-		return models.Quiz{}, fmt.Errorf("%s: %w", op, err)
-	}
-	defer stmtQuiz.Close()
-
-	var quiz models.Quiz
-	err = stmtQuiz.QueryRowContext(ctx, quizID).Scan(&quiz.ID, &quiz.Question, &quiz.Description, &quiz.Image)
-	if err != nil {
-		return models.Quiz{}, fmt.Errorf("%s: %w", op, err)
-	}
-
-	quiz.Answers = answers
-
-	return quiz, nil
 }
 
 func (s *Storage) App(ctx context.Context) (models.App, error) {

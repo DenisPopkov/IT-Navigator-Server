@@ -94,9 +94,9 @@ func (a *App) Run() error {
 
 	authRouter.HandleFunc("/user", a.coreService.DeleteUserHandler).Methods("DELETE")
 	authRouter.HandleFunc("/user", a.coreService.GetUserHandler).Methods("GET")
-	authRouter.HandleFunc("/articles", a.coreService.GetArticlesHandler).Methods("GET")
-	authRouter.HandleFunc("/poets", a.coreService.GetPoetsHandler).Methods("GET")
-	authRouter.HandleFunc("/authors", a.coreService.GetAuthorHandler).Methods("GET")
+	authRouter.HandleFunc("/article", a.coreService.GetArticlesHandler).Methods("GET")
+	authRouter.HandleFunc("/course", a.coreService.GetCoursesHandler).Methods("GET")
+	authRouter.HandleFunc("/feed", a.coreService.GetFeedHandler).Methods("GET")
 
 	a.httpServer = &http.Server{
 		Addr:    fmt.Sprintf(":%d", a.port),

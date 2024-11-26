@@ -15,62 +15,56 @@ type UserProvider interface {
 	GetUser(ctx context.Context, userId int64) (models.UserData, error)
 }
 
-type PoetProvider interface {
-	Poets(ctx context.Context, userId int64) ([]models.Poet, error)
+type CourseProvider interface {
+	Courses(ctx context.Context) ([]models.Course, error)
 }
 
 type ArticleProvider interface {
-	Articles(ctx context.Context, userId int64) ([]models.Article, error)
+	Articles(ctx context.Context) ([]models.Article, error)
 }
 
-type AuthorProvider interface {
-	Authors(ctx context.Context, userId int64) ([]models.Author, error)
+type FeedProvider interface {
+	Feeds(ctx context.Context) ([]models.Feed, error)
 }
 
 type Core struct {
 	log             *slog.Logger
 	userProvider    UserProvider
-	poetProvider    PoetProvider
+	courseProvider  CourseProvider
 	articleProvider ArticleProvider
-	authorProvider  AuthorProvider
+	feedProvider    FeedProvider
 	tokenTTL        time.Duration
 }
 
 func New(
 	log *slog.Logger,
 	userProvider UserProvider,
-	poetProvider PoetProvider,
+	courseProvider CourseProvider,
 	articleProvider ArticleProvider,
-	authorProvider AuthorProvider,
+	feedProvider FeedProvider,
 	tokenTTL time.Duration,
 ) *Core {
 	return &Core{
 		log:             log,
 		userProvider:    userProvider,
-		poetProvider:    poetProvider,
+		courseProvider:  courseProvider,
 		articleProvider: articleProvider,
-		authorProvider:  authorProvider,
+		feedProvider:    feedProvider,
 		tokenTTL:        tokenTTL,
 	}
 }
 
-func (c *Core) GetAuthorHandler(w http.ResponseWriter, r *http.Request) {
-	const op = "core.GetAuthorHandler"
+func (c *Core) GetFeedHandler(w http.ResponseWriter, r *http.Request) {
+	const op = "core.GetFeedHandler"
 
-	uid, ok := r.Context().Value("uid").(int64)
-	if !ok {
-		http.Error(w, "UID not found in context", http.StatusInternalServerError)
-		return
-	}
-
-	authors, err := c.authorProvider.Authors(r.Context(), uid)
+	feeds, err := c.feedProvider.Feeds(r.Context())
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(authors); err != nil {
+	if err := json.NewEncoder(w).Encode(feeds); err != nil {
 		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusInternalServerError)
 		return
 	}
@@ -79,13 +73,7 @@ func (c *Core) GetAuthorHandler(w http.ResponseWriter, r *http.Request) {
 func (c *Core) GetArticlesHandler(w http.ResponseWriter, r *http.Request) {
 	const op = "core.GetArticlesHandler"
 
-	uid, ok := r.Context().Value("uid").(int64)
-	if !ok {
-		http.Error(w, "UID not found in context", http.StatusInternalServerError)
-		return
-	}
-
-	articles, err := c.articleProvider.Articles(r.Context(), uid)
+	articles, err := c.articleProvider.Articles(r.Context())
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusInternalServerError)
 		return
@@ -98,23 +86,20 @@ func (c *Core) GetArticlesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (c *Core) GetPoetsHandler(w http.ResponseWriter, r *http.Request) {
-	const op = "core.GetPoetsHandler"
+func (c *Core) GetCoursesHandler(w http.ResponseWriter, r *http.Request) {
+	const op = "core.GetCoursesHandler"
 
-	uid, ok := r.Context().Value("uid").(int64)
-	if !ok {
-		http.Error(w, "UID not found in context", http.StatusInternalServerError)
-		return
-	}
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
 
-	poets, err := c.poetProvider.Poets(r.Context(), uid)
+	courses, err := c.courseProvider.Courses(ctx)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(poets); err != nil {
+	if err := json.NewEncoder(w).Encode(courses); err != nil {
 		http.Error(w, fmt.Sprintf("%s: %v", op, err), http.StatusInternalServerError)
 		return
 	}

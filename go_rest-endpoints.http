@@ -1,41 +1,24 @@
 ###
-GET http://localhost:4041/authors
+GET http://localhost:4041/feed
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTI1NjIxNjEsInBob25lIjoiNjY2MTM3ODgwOSIsInVpZCI6MjN9.7iSbMyxs3iyDhKezatRUguPqp8YJ4PCzKyfEPA9-OiY
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBvcGtvdi1kZW4wM0BtYWlsLnJ1IiwiZXhwIjoxNzM1MjM0NzU2LCJ1aWQiOjd9.6DEHe-Dr-s5AmdKcKMx2ir36hnfXhrHO2k28Ys8RITg
 
 ###
-GET http://localhost:4041/articles
+GET http://localhost:4041/article
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTI1NjIxNjEsInBob25lIjoiNjY2MTM3ODgwOSIsInVpZCI6MjN9.7iSbMyxs3iyDhKezatRUguPqp8YJ4PCzKyfEPA9-OiY
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBvcGtvdi1kZW4wM0BtYWlsLnJ1IiwiZXhwIjoxNzM1MjM0NzU2LCJ1aWQiOjd9.6DEHe-Dr-s5AmdKcKMx2ir36hnfXhrHO2k28Ys8RITg
 
 ###
-GET http://localhost:4041/poets
+GET http://localhost:4041/course
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTI1NjIxNjEsInBob25lIjoiNjY2MTM3ODgwOSIsInVpZCI6MjN9.7iSbMyxs3iyDhKezatRUguPqp8YJ4PCzKyfEPA9-OiY
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBvcGtvdi1kZW4wM0BtYWlsLnJ1IiwiZXhwIjoxNzM1MjM0NzU2LCJ1aWQiOjd9.6DEHe-Dr-s5AmdKcKMx2ir36hnfXhrHO2k28Ys8RITg
 
 ###
 GET http://localhost:4041/user
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTI1NjIxNjEsInBob25lIjoiNjY2MTM3ODgwOSIsInVpZCI6MjN9.7iSbMyxs3iyDhKezatRUguPqp8YJ4PCzKyfEPA9-OiY
-
-
-###
-PATCH http://localhost:4041/authors?authorId=1001
-Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTI1NjIxNjEsInBob25lIjoiNjY2MTM3ODgwOSIsInVpZCI6MjN9.7iSbMyxs3iyDhKezatRUguPqp8YJ4PCzKyfEPA9-OiY
-
-###
-PATCH http://localhost:4041/articles?articleId=2001
-Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTI1NjIxNjEsInBob25lIjoiNjY2MTM3ODgwOSIsInVpZCI6MjN9.7iSbMyxs3iyDhKezatRUguPqp8YJ4PCzKyfEPA9-OiY
-
-
-###
-PATCH http://localhost:4041/poets?poetId=3001
-Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTI1NjIxNjEsInBob25lIjoiNjY2MTM3ODgwOSIsInVpZCI6MjN9.7iSbMyxs3iyDhKezatRUguPqp8YJ4PCzKyfEPA9-OiY
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBvcGtvdi1kZW4wM0BtYWlsLnJ1IiwiZXhwIjoxNzM1MjM0NzU2LCJ1aWQiOjd9.6DEHe-Dr-s5AmdKcKMx2ir36hnfXhrHO2k28Ys8RITg
 
 ###
 DELETE http://localhost:4041/user
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTI1NjIxNjEsInBob25lIjoiNjY2MTM3ODgwOSIsInVpZCI6MjN9.7iSbMyxs3iyDhKezatRUguPqp8YJ4PCzKyfEPA9-OiY
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBvcGtvdi1kZW4wM0BtYWlsLnJ1IiwiZXhwIjoxNzM1MjM0NzU2LCJ1aWQiOjd9.6DEHe-Dr-s5AmdKcKMx2ir36hnfXhrHO2k28Ys8RITg

@@ -6,10 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/mattn/go-sqlite3"
-	"math/rand"
 	"sso/internal/domain/models"
 	"sso/internal/storage"
-	"time"
 )
 
 type Storage struct {
@@ -39,37 +37,7 @@ func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	authorIDs, err := s.getAllIDsFromAuthors(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
-	}
-
-	articleIDs, err := s.getAllIDsFromArticles(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
-	}
-
-	poetIDs, err := s.getAllIDsFromPoets(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("%s: %w", op, err)
-	}
-
-	authorsName := map[int]string{
-		0: "Фёдор Достоевский",
-		1: "Антон Чехов",
-		2: "Лев Толстой",
-	}
-
-	authorsImage := map[int]string{
-		0: "https://iili.io/JwdlbqJ.png",
-		1: "https://iili.io/Jwdlg0x.png",
-		2: "https://iili.io/Jwdl6JV.png",
-	}
-
-	rand.New(rand.NewSource(time.Now().UnixNano()))
-	randomKey := rand.Intn(len(authorsName))
-
-	res, err := stmt.ExecContext(ctx, email, passHash, authorsName[randomKey], authorsImage[randomKey])
+	res, err := stmt.ExecContext(ctx, email, passHash, "Профиль", "")
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && errors.Is(sqliteErr.ExtendedCode, sqlite3.ErrConstraintUnique) {
@@ -83,97 +51,76 @@ func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	for _, authorID := range authorIDs {
-		_, err = s.db.ExecContext(ctx, "INSERT INTO authors(userId, authorId) VALUES(?, ?)", id, authorID)
-		if err != nil {
-			return id, fmt.Errorf("%s: failed to insert author: %w", op, err)
-		}
-	}
-
-	for _, articleID := range articleIDs {
-		_, err = s.db.ExecContext(ctx, "INSERT INTO articles(userId, articleId) VALUES(?, ?)", id, articleID)
-		if err != nil {
-			return id, fmt.Errorf("%s: failed to insert article: %w", op, err)
-		}
-	}
-
-	for _, poetID := range poetIDs {
-		_, err = s.db.ExecContext(ctx, "INSERT INTO poets(userId, poetId) VALUES(?, ?)", id, poetID)
-		if err != nil {
-			return id, fmt.Errorf("%s: failed to insert poet: %w", op, err)
-		}
-	}
-
 	return id, nil
 }
 
-func (s *Storage) getAllIDsFromAuthors(ctx context.Context) ([]int, error) {
-	query := fmt.Sprintf("SELECT id FROM author")
+func (s *Storage) Feeds(ctx context.Context) ([]models.Feed, error) {
+	query := fmt.Sprintf("SELECT * FROM feed")
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var ids []int
+	var feeds []models.Feed
 	for rows.Next() {
-		var id int
-		if err := rows.Scan(&id); err != nil {
+		var feed models.Feed
+		if err := rows.Scan(&feed); err != nil {
 			return nil, err
 		}
-		ids = append(ids, id)
+		feeds = append(feeds, feed)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return ids, nil
+	return feeds, nil
 }
 
-func (s *Storage) getAllIDsFromArticles(ctx context.Context) ([]int, error) {
-	query := fmt.Sprintf("SELECT id FROM article")
+func (s *Storage) Articles(ctx context.Context) ([]models.Article, error) {
+	query := fmt.Sprintf("SELECT * FROM article")
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var ids []int
+	var articles []models.Article
 	for rows.Next() {
-		var id int
-		if err := rows.Scan(&id); err != nil {
+		var article models.Article
+		if err := rows.Scan(&article); err != nil {
 			return nil, err
 		}
-		ids = append(ids, id)
+		articles = append(articles, article)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return ids, nil
+	return articles, nil
 }
 
-func (s *Storage) getAllIDsFromPoets(ctx context.Context) ([]int, error) {
-	query := fmt.Sprintf("SELECT id FROM poet")
+func (s *Storage) Courses(ctx context.Context) ([]models.Course, error) {
+	query := "SELECT * FROM course"
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var ids []int
+	var courses []models.Course
 	for rows.Next() {
-		var id int
-		if err := rows.Scan(&id); err != nil {
+		var course models.Course
+		if err := rows.Scan(&course); err != nil {
 			return nil, err
 		}
-		ids = append(ids, id)
+		courses = append(courses, course)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return ids, nil
+	return courses, nil
 }
 
 // User returns user by email.
@@ -224,117 +171,6 @@ func (s *Storage) GetUser(ctx context.Context, userId int64) (models.UserData, e
 	return user, nil
 }
 
-// Authors retrieves authors from the database for a given user ID.
-func (s *Storage) Authors(ctx context.Context, userId int64) ([]models.Author, error) {
-	const op = "storage.sqlite.GetAuthors"
-
-	stmt, err := s.db.Prepare(`
-		SELECT a.id, a.name, a.image
-		FROM author AS a
-		INNER JOIN authors AS ua ON a.id = ua.authorId
-		WHERE ua.userId = ?
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-
-	rows, err := stmt.QueryContext(ctx, userId)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-	defer rows.Close()
-
-	var authors []models.Author
-	for rows.Next() {
-		var author models.Author
-		err := rows.Scan(&author.ID, &author.Name, &author.Image)
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", op, err)
-		}
-		authors = append(authors, author)
-	}
-
-	if err := rows.Err(); err != nil {
-		return authors, fmt.Errorf("%s: %w", op, err)
-	}
-
-	return authors, nil
-}
-
-// Articles retrieves articles from the database for a given user ID.
-func (s *Storage) Articles(ctx context.Context, userId int64) ([]models.Article, error) {
-	const op = "storage.sqlite.GetArticles"
-
-	stmt, err := s.db.Prepare(`
-		SELECT a.id, a.name, a.image, a.description
-		FROM article AS a
-		INNER JOIN articles AS ua ON a.id = ua.articleId
-		WHERE ua.userId = ?
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-
-	rows, err := stmt.QueryContext(ctx, userId)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-	defer rows.Close()
-
-	var articles []models.Article
-	for rows.Next() {
-		var article models.Article
-		err := rows.Scan(&article.ID, &article.Name, &article.Image, &article.Description)
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", op, err)
-		}
-		articles = append(articles, article)
-	}
-
-	if err := rows.Err(); err != nil {
-		return articles, fmt.Errorf("%s: %w", op, err)
-	}
-
-	return articles, nil
-}
-
-// Poets retrieves poets from the database for a given user ID.
-func (s *Storage) Poets(ctx context.Context, userId int64) ([]models.Poet, error) {
-	const op = "storage.sqlite.GetPoets"
-
-	stmt, err := s.db.Prepare(`
-		SELECT p.id, p.name, p.image
-		FROM poet AS p
-		INNER JOIN poets AS ua ON p.id = ua.poetId
-		WHERE ua.userId = ?
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-
-	rows, err := stmt.QueryContext(ctx, userId)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-	defer rows.Close()
-
-	var poets []models.Poet
-	for rows.Next() {
-		var poet models.Poet
-		err := rows.Scan(&poet.ID, &poet.Name, &poet.Image)
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", op, err)
-		}
-		poets = append(poets, poet)
-	}
-
-	if err := rows.Err(); err != nil {
-		return poets, fmt.Errorf("%s: %w", op, err)
-	}
-
-	return poets, nil
-}
-
 // DeleteUser deletes a user by their ID.
 func (s *Storage) DeleteUser(ctx context.Context, userID int64) error {
 	const op = "storage.sqlite.DeleteUser"
@@ -344,25 +180,7 @@ func (s *Storage) DeleteUser(ctx context.Context, userID int64) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	stmtAuthors, err := s.db.Prepare("DELETE FROM authors WHERE userId = ?")
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	stmtArticles, err := s.db.Prepare("DELETE FROM articles WHERE userId = ?")
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
-	stmtPoets, err := s.db.Prepare("DELETE FROM poets WHERE userId = ?")
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-
 	_, err = stmt.ExecContext(ctx, userID)
-	_, err = stmtAuthors.ExecContext(ctx, userID)
-	_, err = stmtArticles.ExecContext(ctx, userID)
-	_, err = stmtPoets.ExecContext(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

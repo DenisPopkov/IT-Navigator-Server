@@ -1,24 +1,24 @@
 ###
-GET http://localhost:4041/feed
+GET http://localhost:4042/feed
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBvcGtvdi1kZW4wM0BtYWlsLnJ1IiwiZXhwIjoxNzM1MjM0NzU2LCJ1aWQiOjd9.6DEHe-Dr-s5AmdKcKMx2ir36hnfXhrHO2k28Ys8RITg
 
 ###
-GET http://localhost:4041/article
+GET http://localhost:4042/article
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBvcGtvdi1kZW4wM0BtYWlsLnJ1IiwiZXhwIjoxNzM1MjM0NzU2LCJ1aWQiOjd9.6DEHe-Dr-s5AmdKcKMx2ir36hnfXhrHO2k28Ys8RITg
 
 ###
-GET http://localhost:4041/course
+GET http://localhost:4042/course
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBvcGtvdi1kZW4wM0BtYWlsLnJ1IiwiZXhwIjoxNzM1MjM0NzU2LCJ1aWQiOjd9.6DEHe-Dr-s5AmdKcKMx2ir36hnfXhrHO2k28Ys8RITg
 
 ###
-GET http://localhost:4041/user
+GET http://localhost:4042/user
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBvcGtvdi1kZW4wM0BtYWlsLnJ1IiwiZXhwIjoxNzM1MjM0NzU2LCJ1aWQiOjd9.6DEHe-Dr-s5AmdKcKMx2ir36hnfXhrHO2k28Ys8RITg
 
 ###
-DELETE http://localhost:4041/user
+DELETE http://localhost:4042/user
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBvcGtvdi1kZW4wM0BtYWlsLnJ1IiwiZXhwIjoxNzM1MjM0NzU2LCJ1aWQiOjd9.6DEHe-Dr-s5AmdKcKMx2ir36hnfXhrHO2k28Ys8RITg

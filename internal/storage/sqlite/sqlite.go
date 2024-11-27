@@ -78,7 +78,7 @@ func (s *Storage) Feeds(ctx context.Context) ([]models.Feed, error) {
 }
 
 func (s *Storage) Articles(ctx context.Context) ([]models.Article, error) {
-	query := fmt.Sprintf("SELECT * FROM article")
+	query := fmt.Sprintf("SELECT ID, Name, Description, Image FROM article")
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -101,26 +101,38 @@ func (s *Storage) Articles(ctx context.Context) ([]models.Article, error) {
 }
 
 func (s *Storage) Courses(ctx context.Context) ([]models.Course, error) {
-	query := "SELECT * FROM course"
-	rows, err := s.db.QueryContext(ctx, query)
+	const op = "storage.sqlite.GetCourses"
+
+	stmt, err := s.db.Prepare(`
+	SELECT id, name, image
+	FROM course
+`)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	rows, err := stmt.QueryContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 	defer rows.Close()
 
 	var courses []models.Course
 	for rows.Next() {
 		var course models.Course
-		if err := rows.Scan(&course); err != nil {
-			return nil, err
+		err := rows.Scan(&course.ID, &course.Name, &course.Image)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
 		}
 		courses = append(courses, course)
 	}
+
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return courses, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return courses, nil
+
 }
 
 // User returns user by email.

@@ -1,8 +1,8 @@
 env: "local"
 storage_path: "./storage/sso.db"
 grpc:
-  port: 4056
+  port: 4071
   timeout: 10h
 rest:
-  port: 4041
+  port: 4042
   timeout: 10h
